@@ -1,13 +1,23 @@
-import { Image } from "expo-image";
-import { Platform, StyleSheet } from "react-native";
-
+import { auth, onAuthStateChanged } from "@/app/services/firebase";
 import { HelloWave } from "@/components/HelloWave";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { Image } from "expo-image";
+import { useEffect, useState } from "react";
+import { Button, Platform, StyleSheet } from "react-native";
+import LoginScreen from "../components/LoginScreen";
+import { clearCredentials } from "../utils/auth";
 
 export default function HomeScreen() {
-  const isLoggedIn = false;
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(!!user);
+    });
+    return () => unsubscribe();
+  }, []);
 
   return isLoggedIn ? (
     <>
@@ -57,22 +67,19 @@ export default function HomeScreen() {
             directory. This will move the current{" "}
             <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
             <ThemedText type="defaultSemiBold">app-example</ThemedText>.
+            <Button
+              title="Limpar credenciais"
+              onPress={clearCredentials}
+              color="red"
+            />
           </ThemedText>
         </ThemedView>
       </ParallaxScrollView>{" "}
     </>
   ) : (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedText type="title">Inputs de E-mail e Senha aqui!</ThemedText>
-    </ParallaxScrollView>
+    <>
+      <LoginScreen onLoginSuccess={() => setIsLoggedIn(true)} />
+    </>
   );
 }
 
