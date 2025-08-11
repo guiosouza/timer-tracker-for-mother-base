@@ -113,45 +113,49 @@ async function syncTasksWithFirebase() {
     Alert.alert("Erro", "Você precisa estar logado para sincronizar");
     return;
   }
-  try {
-    const uid = auth.currentUser.uid;
-    const localData = await getLocalData();
+  const uid = auth.currentUser.uid;
+  const localData = await getLocalData();
 
-    for (const taskName in localData) {
-      const normalizedTaskName = normalizeTaskName(taskName);
-      const taskRef = ref(database, `gamificationUserData/${uid}/${normalizedTaskName}`);
-      const snap = await get(taskRef);
+  for (const taskName in localData) {
+    const taskRef = ref(database, `gamificationUserData/${uid}/${taskName}`);
+    const snap = await get(taskRef);
 
-      const remote = snap.exists()
-        ? snap.val()
-        : { lastTimeSynced: "", timeWasUsed: false };
+    const remote = snap.exists()
+      ? snap.val()
+      : { lastTimeSynced: "", timeWasUsed: false };
 
-      if (remote.timeWasUsed) {
+    const remoteLast = Date.parse(remote.lastTimeSynced);
+    const localLast = Date.parse(localData[taskName].lastTimeSynced);
+
+    if (remote.timeWasUsed) {
+      if (localLast > remoteLast) {
+        // Local mais recente: atualiza remoto, resetando timeWasUsed
+        await set(taskRef, {
+          ...localData[taskName],
+          timeWasUsed: false,
+        });
+      } else {
+        // Remoto mais recente ou igual: reseta local
         localData[taskName] = {
           ...localData[taskName],
           timeline: [],
           totalTimeTracked: "000:00",
           timeWasUsed: true,
         };
-        continue;
       }
-
-      if (
-        !remote.lastTimeSynced ||
-        Date.parse(localData[taskName].lastTimeSynced) >
-          Date.parse(remote.lastTimeSynced)
-      ) {
-        await set(taskRef, localData[taskName]);
-      }
+      continue;
     }
 
-    await saveLocalData(localData);
-    Alert.alert("Sucesso", "Sincronização concluída!");
-  } catch (error) {
-    console.error("Erro na sincronização:", error);
-    Alert.alert("Erro", "Falha na sincronização. Tente novamente.");
+    // Se remoto não foi usado, sincroniza normal pela data
+    if (!remote.lastTimeSynced || localLast > remoteLast) {
+      await set(taskRef, localData[taskName]);
+    }
   }
+
+  await saveLocalData(localData);
+  Alert.alert("Sucesso", "Sincronização concluída!");
 }
+
 
 // --- Opções de Task ---
 const options: TaskOption[] = [
