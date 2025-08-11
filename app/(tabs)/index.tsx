@@ -5,7 +5,15 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Image } from "expo-image";
 import { useEffect, useRef, useState } from "react";
-import { Button, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Button,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import LoginScreen from "../../components/LoginScreen";
 import { clearCredentials } from "../utils/auth";
 
@@ -22,17 +30,30 @@ const options: TaskOption[] = [
 function CustomSelect({
   selectedValue,
   onChange,
+  isRunning,
 }: {
   selectedValue: string;
   onChange: (value: string) => void;
+  isRunning: boolean;
 }) {
   const [modalVisible, setModalVisible] = useState(false);
+
+  function tryOpen() {
+    if (isRunning) {
+      alert("Pause o timer antes de trocar de task!");
+      return;
+    }
+    setModalVisible(true);
+  }
 
   return (
     <>
       <TouchableOpacity
-        style={styles.selectButton}
-        onPress={() => setModalVisible(true)}
+        style={[
+          styles.selectButton,
+          isRunning && { opacity: 0.5 }, // visualmente desativa
+        ]}
+        onPress={tryOpen}
       >
         <Text style={styles.selectText}>{selectedValue}</Text>
       </TouchableOpacity>
@@ -50,7 +71,10 @@ function CustomSelect({
               keyExtractor={(item) => item.label}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.option, { backgroundColor: item.color + "20" }]}
+                  style={[
+                    styles.option,
+                    { backgroundColor: item.color + "20" },
+                  ]}
                   onPress={() => {
                     onChange(item.label);
                     setModalVisible(false);
@@ -143,7 +167,11 @@ export default function HomeScreen() {
       {/* Escolha da Task */}
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Selecione a Task</ThemedText>
-        <CustomSelect selectedValue={selectedTask} onChange={setSelectedTask} />
+        <CustomSelect
+          selectedValue={selectedTask}
+          onChange={setSelectedTask}
+          isRunning={isRunning}
+        />
       </ThemedView>
 
       {/* Timer */}
