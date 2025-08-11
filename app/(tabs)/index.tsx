@@ -27,21 +27,16 @@ type TaskData = {
   count: number;
   timeline: string[];
   totalTimeTracked: string;
-  lastTimeSynced: string; // ISO string
+  lastTimeSynced: string;
   timeWasUsed: boolean;
 };
 
 const STORAGE_KEY = "@tasks_data";
+const TIMER_KEY = "@timer_start";
 
 // --- Funções utilitárias ---
 function nowISO() {
-  return new Date().toISOString(); // sempre UTC para salvar
-}
-
-function formatDisplay(isoString: string) {
-  if (!isoString) return "";
-  const date = new Date(isoString);
-  return date.toLocaleString("pt-BR", { hour12: false });
+  return new Date().toISOString();
 }
 
 async function getLocalData() {
@@ -76,34 +71,30 @@ async function saveTaskLocally(
     } as TaskData;
   }
 
-  // formatar duração para 000:MM
   const mins = Math.floor(durationSeconds / 60);
   const hrs = Math.floor(mins / 60);
   const duration = `${hrs.toString().padStart(3, "0")}:${(mins % 60)
     .toString()
     .padStart(2, "0")}`;
 
-  // timeline no formato que você pediu
   const entry = `${duration} - de ${start} até ${end}`;
-  data[taskName].timeline.push(entry);
-  if (data[taskName].timeline.length > 20) {
-    data[taskName].timeline.shift();
+  data[normalizedTaskName].timeline.push(entry);
+  if (data[normalizedTaskName].timeline.length > 20) {
+    data[normalizedTaskName].timeline.shift();
   }
 
-  // soma no totalTimeTracked
-  const [h, m] = data[taskName].totalTimeTracked.split(":").map(Number);
+  const [h, m] = data[normalizedTaskName].totalTimeTracked
+    .split(":")
+    .map(Number);
   const totalMins = h * 60 + m + mins;
   const newH = Math.floor(totalMins / 60);
   const newM = totalMins % 60;
-  data[taskName].totalTimeTracked = `${newH.toString().padStart(3, "0")}:${newM
+  data[normalizedTaskName].totalTimeTracked = `${newH
     .toString()
-    .padStart(2, "0")}`;
+    .padStart(3, "0")}:${newM.toString().padStart(2, "0")}`;
 
-  // atualiza lastTimeSynced (ISO UTC)
-  data[taskName].lastTimeSynced = nowISO();
-
-  // garante flag
-  data[taskName].timeWasUsed = false;
+  data[normalizedTaskName].lastTimeSynced = nowISO();
+  data[normalizedTaskName].timeWasUsed = false;
 
   await saveLocalData(data);
 }
@@ -129,13 +120,11 @@ async function syncTasksWithFirebase() {
 
     if (remote.timeWasUsed) {
       if (localLast > remoteLast) {
-        // Local mais recente: atualiza remoto, resetando timeWasUsed
         await set(taskRef, {
           ...localData[taskName],
           timeWasUsed: false,
         });
       } else {
-        // Remoto mais recente ou igual: reseta local
         localData[taskName] = {
           ...localData[taskName],
           timeline: [],
@@ -146,7 +135,6 @@ async function syncTasksWithFirebase() {
       continue;
     }
 
-    // Se remoto não foi usado, sincroniza normal pela data
     if (!remote.lastTimeSynced || localLast > remoteLast) {
       await set(taskRef, localData[taskName]);
     }
@@ -156,7 +144,6 @@ async function syncTasksWithFirebase() {
   Alert.alert("Sucesso", "Sincronização concluída!");
 }
 
-
 // --- Opções de Task ---
 const options: TaskOption[] = [
   { label: "Grind", color: "#FFD700" },
@@ -165,7 +152,7 @@ const options: TaskOption[] = [
   { label: "Caminhada", color: "#FF6347" },
 ];
 
-// --- Componente Select Custom ---
+// --- Select Custom ---
 function CustomSelect({
   selectedValue,
   onChange,
@@ -235,10 +222,10 @@ export default function HomeScreen() {
   const [selectedTask, setSelectedTask] = useState<string>(options[0].label);
   const [isRunning, setIsRunning] = useState(false);
   const [seconds, setSeconds] = useState(0);
-  const [startTime, setStartTime] = useState("");
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Recupera login
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsLoggedIn(!!user);
@@ -246,25 +233,24 @@ export default function HomeScreen() {
     return () => unsubscribe();
   }, []);
 
+  // Recupera timer ao abrir app
   useEffect(() => {
-    if (isRunning) {
-      const now = new Date();
-      setStartTime(now.toLocaleTimeString("pt-BR", { hour12: false }));
-      timerRef.current = setInterval(() => {
-        setSeconds((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+    async function checkIfRunning() {
+      const startStr = await AsyncStorage.getItem(TIMER_KEY);
+      if (startStr) {
+        const start = parseInt(startStr, 10);
+        setIsRunning(true);
+        timerRef.current = setInterval(() => {
+          const diff = Math.floor((Date.now() - start) / 1000);
+          setSeconds(diff);
+        }, 1000);
       }
     }
+    checkIfRunning();
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isRunning]);
+  }, []);
 
   function formatTime(totalSeconds: number) {
     const hrs = Math.floor(totalSeconds / 3600);
@@ -275,15 +261,32 @@ export default function HomeScreen() {
       .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   }
 
+  async function startTimer() {
+    const start = Date.now();
+    await AsyncStorage.setItem(TIMER_KEY, String(start));
+    setIsRunning(true);
+    timerRef.current = setInterval(() => {
+      const diff = Math.floor((Date.now() - start) / 1000);
+      setSeconds(diff);
+    }, 1000);
+  }
+
   async function stopTimer() {
-    setIsRunning(false);
-    const endTime = new Date().toLocaleTimeString("pt-BR", { hour12: false });
+    const startStr = await AsyncStorage.getItem(TIMER_KEY);
+    const start = startStr ? parseInt(startStr, 10) : Date.now();
+    const end = Date.now();
+
+    const diffSeconds = Math.floor((end - start) / 1000);
     await saveTaskLocally(
       selectedTask.toLowerCase(),
-      seconds,
-      startTime,
-      endTime
+      diffSeconds,
+      new Date(start).toLocaleTimeString("pt-BR", { hour12: false }),
+      new Date(end).toLocaleTimeString("pt-BR", { hour12: false })
     );
+
+    if (timerRef.current) clearInterval(timerRef.current);
+    await AsyncStorage.removeItem(TIMER_KEY);
+    setIsRunning(false);
     setSeconds(0);
     Alert.alert("Salvo", "Sessão registrada localmente");
   }
@@ -306,7 +309,6 @@ export default function HomeScreen() {
         <HelloWave />
       </ThemedView>
 
-      {/* Escolha da Task */}
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Selecione a Task</ThemedText>
         <CustomSelect
@@ -316,35 +318,45 @@ export default function HomeScreen() {
         />
       </ThemedView>
 
-      {/* Timer */}
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Timer</ThemedText>
         <ThemedText
-          style={{ fontSize: 32, fontWeight: "bold", color: selectedColor }}
+          style={{ fontSize: 38, fontWeight: "bold", color: selectedColor }}
         >
           {formatTime(seconds)}
         </ThemedText>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
-          {!isRunning ? (
-            <Button title="START" onPress={() => setIsRunning(true)} />
-          ) : (
-            <Button title="STOP" color="red" onPress={stopTimer} />
-          )}
+        <View style={{ flexDirection: "row", marginTop: 10 }}>
+          <TouchableOpacity
+            style={[
+              styles.bigButton,
+              isRunning ? styles.stopButton : styles.startButton,
+            ]}
+            onPress={isRunning ? stopTimer : startTimer}
+          >
+            <Text style={styles.bigButtonText}>
+              {isRunning ? "STOP" : "START"}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ThemedView>
 
-      {/* Sincronizar */}
       <ThemedView style={styles.stepContainer}>
-        <Button
-          title="Sincronizar"
+        <TouchableOpacity
+          style={styles.smallButton}
           onPress={syncTasksWithFirebase}
           disabled={isRunning}
-        />
+        >
+          <Text
+            style={[styles.smallButtonText, isRunning && styles.disabledText]}
+          >
+            Sincronizar
+          </Text>
+        </TouchableOpacity>
       </ThemedView>
 
       <ThemedView style={styles.stepContainer}>
         <Button
-          title="Limpar credenciais"
+          title="Logout"
           onPress={clearCredentials}
           color="red"
         />
@@ -395,4 +407,39 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   cancelText: { textAlign: "center", fontWeight: "bold", color: "#555" },
+  bigButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 5,
+  },
+  startButton: {
+    backgroundColor: "#4CAF50", // verde
+  },
+  stopButton: {
+    backgroundColor: "#E53935", // vermelho
+  },
+  bigButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 20,
+  },
+  smallButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: "#2196F3", // azul suave
+    alignSelf: "flex-start",
+    marginVertical: 10,
+  },
+  smallButtonText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  disabledText: {
+    color: "#999",
+  },
 });
