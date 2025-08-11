@@ -3,21 +3,77 @@ import { HelloWave } from "@/components/HelloWave";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Picker } from "@react-native-picker/picker";
 import { Image } from "expo-image";
 import { useEffect, useRef, useState } from "react";
-import { Button, StyleSheet, View } from "react-native";
+import { Button, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import LoginScreen from "../../components/LoginScreen";
 import { clearCredentials } from "../utils/auth";
 
 type TaskOption = { label: string; color: string };
 
 const options: TaskOption[] = [
-  { label: "Grind", color: "#FFD700" }, // dourado
-  { label: "Exercícios", color: "#32CD32" }, // verde limão
-  { label: "Exercícios (focado)", color: "#1E90FF" }, // azul
-  { label: "Caminhada", color: "#FF6347" }, // vermelho tomate
+  { label: "Grind", color: "#FFD700" },
+  { label: "Exercícios", color: "#32CD32" },
+  { label: "Exercícios (focado)", color: "#1E90FF" },
+  { label: "Caminhada", color: "#FF6347" },
 ];
+
+// --- Componente Select Custom ---
+function CustomSelect({
+  selectedValue,
+  onChange,
+}: {
+  selectedValue: string;
+  onChange: (value: string) => void;
+}) {
+  const [modalVisible, setModalVisible] = useState(false);
+
+  return (
+    <>
+      <TouchableOpacity
+        style={styles.selectButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={styles.selectText}>{selectedValue}</Text>
+      </TouchableOpacity>
+
+      <Modal
+        transparent
+        visible={modalVisible}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.modalContainer}>
+            <FlatList
+              data={options}
+              keyExtractor={(item) => item.label}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.option, { backgroundColor: item.color + "20" }]}
+                  onPress={() => {
+                    onChange(item.label);
+                    setModalVisible(false);
+                  }}
+                >
+                  <Text style={[styles.optionText, { color: item.color }]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.cancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}
 
 export default function HomeScreen() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -87,21 +143,7 @@ export default function HomeScreen() {
       {/* Escolha da Task */}
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Selecione a Task</ThemedText>
-        <Picker
-          selectedValue={selectedTask}
-          onValueChange={(value: string) => setSelectedTask(value)}
-        >
-          {options.map((opt) => {
-            return (
-              // @ts-ignore
-              <Picker.Item
-                key={opt.label}
-                label={opt.label}
-                value={opt.label}
-              />
-            );
-          })}
-        </Picker>
+        <CustomSelect selectedValue={selectedTask} onChange={setSelectedTask} />
       </ThemedView>
 
       {/* Timer */}
@@ -154,5 +196,49 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: "absolute",
+  },
+  selectButton: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+  },
+  selectText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    width: "80%",
+    padding: 16,
+    elevation: 5,
+  },
+  option: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  cancelButton: {
+    marginTop: 10,
+    padding: 12,
+    backgroundColor: "#eee",
+    borderRadius: 8,
+  },
+  cancelText: {
+    textAlign: "center",
+    fontWeight: "bold",
+    color: "#555",
   },
 });
