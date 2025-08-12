@@ -1,23 +1,17 @@
 import { auth, database, onAuthStateChanged } from "@/app/services/firebase";
-import { HelloWave } from "@/components/HelloWave";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,
-  Button,
+  Dimensions,
   FlatList,
   Modal,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-  Dimensions,
-  StatusBar,
+  View
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import LoginScreen from "../../components/LoginScreen";
 import { clearCredentials } from "../utils/auth";
 
@@ -301,8 +295,11 @@ export default function HomeScreen() {
     options.find((opt) => opt.label === selectedTask)?.color || "#000";
 
   return isLoggedIn ? (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: "#000" }}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
+      
+      {/* Safe area at top to avoid notification bar */}
+      <View style={styles.safeAreaTop} />
       
       {/* Logout Button at the top */}
       <TouchableOpacity 
@@ -370,7 +367,8 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.codecFooter}>
-          <Text style={styles.codecFooterText}>FOXHOUND</Text>
+          <Text style={styles.codecFooterText}>We're not junkyard hounds</Text>
+          <Text style={styles.versionText}>v1.1.0</Text>
         </View>
       </LinearGradient>
 
@@ -408,13 +406,18 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeAreaTop: {
+    height: 30, // Altura para evitar a barra de notificações
+    width: '100%',
+    backgroundColor: '#000',
+  },
   container: {
     flex: 1,
     padding: 16,
   },
   logoutButton: {
     position: 'absolute',
-    top: 10,
+    top: 40, // Ajustado para ficar abaixo da área segura
     right: 10,
     backgroundColor: '#8B0000',
     paddingVertical: 6,
@@ -545,6 +548,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 2,
+  },
+  versionText: {
+    color: '#4CAF50',
+    fontSize: 10,
+    marginTop: 4,
+    opacity: 0.7,
   },
   // Modal styles
   modalOverlay: {
