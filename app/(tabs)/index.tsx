@@ -300,14 +300,6 @@ export default function HomeScreen() {
       
       {/* Safe area at top to avoid notification bar */}
       <View style={styles.safeAreaTop} />
-      
-      {/* Logout Button at the top */}
-      <TouchableOpacity 
-        style={styles.logoutButton}
-        onPress={() => setShowLogoutConfirm(true)}
-      >
-        <Text style={styles.logoutButtonText}>LOGOUT</Text>
-      </TouchableOpacity>
 
       {/* Main CODEC Screen */}
       <LinearGradient
@@ -319,6 +311,14 @@ export default function HomeScreen() {
             <Text style={styles.codecHeaderText}>MOTHER BASE</Text>
             <Text style={styles.codecSubText}>TIMER TRACKER</Text>
           </View>
+          
+          {/* Logout Button below MOTHER BASE */}
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={() => setShowLogoutConfirm(true)}
+          >
+            <Text style={styles.logoutButtonText}>LOGOUT</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.codecScreen}>
@@ -416,16 +416,14 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logoutButton: {
-    position: 'absolute',
-    top: 40, // Ajustado para ficar abaixo da área segura
-    right: 10,
     backgroundColor: '#8B0000',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 4,
-    zIndex: 10,
     borderWidth: 1,
     borderColor: '#FF0000',
+    marginTop: 10,
+    alignSelf: 'center',
   },
   logoutButtonText: {
     color: '#FFFFFF',
