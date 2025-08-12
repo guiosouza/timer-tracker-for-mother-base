@@ -14,7 +14,10 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Dimensions,
+  StatusBar,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import LoginScreen from "../../components/LoginScreen";
 import { clearCredentials } from "../utils/auth";
 
@@ -222,8 +225,11 @@ export default function HomeScreen() {
   const [selectedTask, setSelectedTask] = useState<string>(options[0].label);
   const [isRunning, setIsRunning] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const screenWidth = Dimensions.get('window').width;
+  const screenHeight = Dimensions.get('window').height;
 
   // Recupera login
   useEffect(() => {
@@ -295,151 +301,350 @@ export default function HomeScreen() {
     options.find((opt) => opt.label === selectedTask)?.color || "#000";
 
   return isLoggedIn ? (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
+    <View style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      
+      {/* Logout Button at the top */}
+      <TouchableOpacity 
+        style={styles.logoutButton}
+        onPress={() => setShowLogoutConfirm(true)}
+      >
+        <Text style={styles.logoutButtonText}>LOGOUT</Text>
+      </TouchableOpacity>
 
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Selecione a Task</ThemedText>
-        <CustomSelect
-          selectedValue={selectedTask}
-          onChange={setSelectedTask}
-          isRunning={isRunning}
-        />
-      </ThemedView>
-
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Timer</ThemedText>
-        <ThemedText
-          style={{ fontSize: 38, fontWeight: "bold", color: selectedColor }}
-        >
-          {formatTime(seconds)}
-        </ThemedText>
-        <View style={{ flexDirection: "row", marginTop: 10 }}>
-          <TouchableOpacity
-            style={[
-              styles.bigButton,
-              isRunning ? styles.stopButton : styles.startButton,
-            ]}
-            onPress={isRunning ? stopTimer : startTimer}
-          >
-            <Text style={styles.bigButtonText}>
-              {isRunning ? "STOP" : "START"}
-            </Text>
-          </TouchableOpacity>
+      {/* Main CODEC Screen */}
+      <LinearGradient
+        colors={['#1a2a3a', '#0a1520']}
+        style={styles.container}
+      >
+        <View style={styles.codecHeader}>
+          <View style={styles.codecBorder}>
+            <Text style={styles.codecHeaderText}>MOTHER BASE</Text>
+            <Text style={styles.codecSubText}>TIMER TRACKER</Text>
+          </View>
         </View>
-      </ThemedView>
 
-      <ThemedView style={styles.stepContainer}>
-        <TouchableOpacity
-          style={styles.smallButton}
-          onPress={syncTasksWithFirebase}
-          disabled={isRunning}
-        >
-          <Text
-            style={[styles.smallButtonText, isRunning && styles.disabledText]}
-          >
-            Sincronizar
-          </Text>
-        </TouchableOpacity>
-      </ThemedView>
+        <View style={styles.codecScreen}>
+          <View style={styles.codecContent}>
+            <View style={styles.taskSection}>
+              <Text style={styles.sectionTitle}>MISSION TYPE</Text>
+              <CustomSelect
+                selectedValue={selectedTask}
+                onChange={setSelectedTask}
+                isRunning={isRunning}
+              />
+            </View>
 
-      <ThemedView style={styles.stepContainer}>
-        <Button
-          title="Logout"
-          onPress={clearCredentials}
-          color="red"
-        />
-      </ThemedView>
-    </ParallaxScrollView>
+            <View style={styles.timerSection}>
+              <Text style={styles.sectionTitle}>ELAPSED TIME</Text>
+              <Text style={[styles.timerText, { color: selectedColor }]}>
+                {formatTime(seconds)}
+              </Text>
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.actionButton,
+                    isRunning ? styles.stopButton : styles.startButton,
+                  ]}
+                  onPress={isRunning ? stopTimer : startTimer}
+                >
+                  <Text style={styles.actionButtonText}>
+                    {isRunning ? "STOP" : "START"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.syncSection}>
+              <TouchableOpacity
+                style={[styles.syncButton, isRunning && styles.disabledButton]}
+                onPress={syncTasksWithFirebase}
+                disabled={isRunning}
+              >
+                <Text style={[styles.syncButtonText, isRunning && styles.disabledText]}>
+                  SYNC DATA
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.codecFooter}>
+          <Text style={styles.codecFooterText}>FOXHOUND</Text>
+        </View>
+      </LinearGradient>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        transparent
+        visible={showLogoutConfirm}
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.logoutModal}>
+            <Text style={styles.logoutModalTitle}>CODEC TRANSMISSION</Text>
+            <Text style={styles.logoutModalText}>Are you sure you want to disconnect from Mother Base?</Text>
+            <View style={styles.logoutModalButtons}>
+              <TouchableOpacity 
+                style={styles.logoutModalButton}
+                onPress={() => setShowLogoutConfirm(false)}
+              >
+                <Text style={styles.logoutModalButtonText}>CANCEL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.logoutModalButton, styles.logoutConfirmButton]}
+                onPress={clearCredentials}
+              >
+                <Text style={styles.logoutModalButtonText}>CONFIRM</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
   ) : (
     <LoginScreen onLoginSuccess={() => setIsLoggedIn(true)} />
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: { flexDirection: "row", alignItems: "center", gap: 8 },
-  stepContainer: { gap: 8, marginBottom: 8 },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+  container: {
+    flex: 1,
+    padding: 16,
   },
+  logoutButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#8B0000',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    zIndex: 10,
+    borderWidth: 1,
+    borderColor: '#FF0000',
+  },
+  logoutButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  codecHeader: {
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  codecBorder: {
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+    padding: 8,
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  codecHeaderText: {
+    color: '#4CAF50',
+    fontSize: 24,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+  },
+  codecSubText: {
+    color: '#4CAF50',
+    fontSize: 14,
+    letterSpacing: 1,
+  },
+  codecScreen: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+  },
+  codecContent: {
+    flex: 1,
+  },
+  taskSection: {
+    marginBottom: 24,
+  },
+  timerSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  syncSection: {
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    color: '#4CAF50',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    letterSpacing: 1,
+  },
+  timerText: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    fontFamily: 'monospace',
+    marginBottom: 16,
+    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  actionButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 36,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+  },
+  startButton: {
+    backgroundColor: '#006400',
+    borderColor: '#4CAF50',
+  },
+  stopButton: {
+    backgroundColor: '#8B0000',
+    borderColor: '#FF0000',
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+    letterSpacing: 1,
+  },
+  syncButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 4,
+    backgroundColor: '#1a3a5a',
+    borderWidth: 1,
+    borderColor: '#4169E1',
+  },
+  syncButtonText: {
+    color: '#ADD8E6',
+    fontWeight: 'bold',
+    fontSize: 14,
+    letterSpacing: 1,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  disabledText: {
+    color: '#999',
+  },
+  codecFooter: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  codecFooterText: {
+    color: '#4CAF50',
+    fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoutModal: {
+    width: '80%',
+    backgroundColor: '#0a1520',
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+    borderRadius: 8,
+    padding: 16,
+  },
+  logoutModalTitle: {
+    color: '#4CAF50',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+    letterSpacing: 1,
+  },
+  logoutModalText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  logoutModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  logoutModalButton: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+    borderRadius: 4,
+    marginHorizontal: 4,
+    backgroundColor: '#1a3a5a',
+  },
+  logoutConfirmButton: {
+    backgroundColor: '#8B0000',
+    borderColor: '#FF0000',
+  },
+  logoutModalButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  // Select styles
   selectButton: {
     padding: 12,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    backgroundColor: "#fff",
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+    borderRadius: 4,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  selectText: { fontSize: 16, color: "#333" },
+  selectText: { 
+    fontSize: 16, 
+    color: '#4CAF50',
+    fontWeight: 'bold',
+  },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    width: "80%",
+    backgroundColor: '#0a1520',
+    borderRadius: 8,
+    width: '80%',
     padding: 16,
-    elevation: 5,
+    borderWidth: 2,
+    borderColor: '#4CAF50',
   },
-  option: { padding: 12, borderBottomWidth: 1, borderBottomColor: "#eee" },
-  optionText: { fontSize: 16, fontWeight: "500" },
+  option: { 
+    padding: 12, 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#4CAF50',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  optionText: { 
+    fontSize: 16, 
+    fontWeight: '500',
+  },
   cancelButton: {
     marginTop: 10,
     padding: 12,
-    backgroundColor: "#eee",
-    borderRadius: 8,
+    backgroundColor: '#8B0000',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#FF0000',
   },
-  cancelText: { textAlign: "center", fontWeight: "bold", color: "#555" },
-  bigButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: 5,
-  },
-  startButton: {
-    backgroundColor: "#4CAF50", // verde
-  },
-  stopButton: {
-    backgroundColor: "#E53935", // vermelho
-  },
-  bigButtonText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 20,
-  },
-  smallButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: "#2196F3", // azul suave
-    alignSelf: "flex-start",
-    marginVertical: 10,
-  },
-  smallButtonText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  disabledText: {
-    color: "#999",
+  cancelText: { 
+    textAlign: 'center', 
+    fontWeight: 'bold', 
+    color: '#FFFFFF' 
   },
 });
