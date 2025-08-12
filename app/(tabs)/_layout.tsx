@@ -54,6 +54,15 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="editar-json"
+        options={{
+          title: "Editar JSON",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="pencil.and.outline" color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
