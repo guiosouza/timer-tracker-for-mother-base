@@ -150,48 +150,70 @@ export default function EditarJsonScreen() {
 
     return (
       <ThemedView style={styles.editorContainer}>
-        <ThemedText type="title">Editando: {selectedTask}</ThemedText>
+        <ThemedText type="title" style={styles.editorTitle}>Editando: {selectedTask}</ThemedText>
+        
+        {/* Destacando o tempo total - agora editável */}
+        {editedTask.totalTimeTracked && (
+          <View style={styles.totalTimeContainer}>
+            <ThemedText style={styles.totalTimeLabel}>TEMPO TOTAL</ThemedText>
+            <ThemedTextInput
+              style={styles.totalTimeInput}
+              value={String(editedTask.totalTimeTracked)}
+              onChangeText={(text) => updateTaskField('totalTimeTracked', text)}
+            />
+          </View>
+        )}
 
-        {Object.entries(editedTask).map(([key, value]) => {
-          // Não mostrar timeline para edição direta
-          if (key === "timeline") {
+        <View style={styles.fieldsContainer}>
+          {Object.entries(editedTask).map(([key, value]) => {
+            // Não mostrar totalTimeTracked novamente (já está destacado acima)
+            if (key === "totalTimeTracked") return null;
+            
+            // Não mostrar timeline para edição direta
+            if (key === "timeline") {
+              return (
+                <View key={key} style={styles.fieldContainer}>
+                  <ThemedText style={styles.fieldLabel}>{key}: </ThemedText>
+                  <View style={styles.timelineIndicator}>
+                    <ThemedText style={styles.timelineText}>
+                      {editedTask.timeline.length} registros
+                    </ThemedText>
+                  </View>
+                </View>
+              );
+            }
+
+            // Para campos booleanos, mostrar opções true/false
+            if (typeof value === "boolean") {
+              return renderBooleanField(key, value);
+            }
+
             return (
               <View key={key} style={styles.fieldContainer}>
-                <ThemedText>{key}: </ThemedText>
-                <ThemedText>
-                  [{editedTask.timeline.length} registros]
-                </ThemedText>
+                <ThemedText style={styles.fieldLabel}>{key}: </ThemedText>
+                <ThemedTextInput
+                  style={styles.input}
+                  value={String(value)}
+                  onChangeText={(text) => updateTaskField(key, text)}
+                />
               </View>
             );
-          }
-
-          // Para campos booleanos, mostrar opções true/false
-          if (typeof value === "boolean") {
-            return renderBooleanField(key, value); // <-- Troque por abaixo
-          }
-
-          return (
-            <View key={key} style={styles.fieldContainer}>
-              <ThemedText>{key}: </ThemedText>
-              <ThemedTextInput
-                style={styles.input}
-                value={String(value)}
-                onChangeText={(text) => updateTaskField(key, text)}
-              />
-            </View>
-          );
-        })}
+          })}
+        </View>
 
         <View style={styles.buttonContainer}>
-          <Button title="Salvar Alterações" onPress={saveData} />
-          <Button
-            title="Cancelar"
+          <TouchableOpacity style={styles.saveButton} onPress={saveData}>
+            <ThemedText style={styles.saveButtonText}>SALVAR ALTERAÇÕES</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.cancelButton}
             onPress={() => {
               setSelectedTask(null);
               setEditedTask(null);
             }}
-            color="red"
-          />
+          >
+            <ThemedText style={styles.cancelButtonText}>CANCELAR</ThemedText>
+          </TouchableOpacity>
         </View>
       </ThemedView>
     );
@@ -219,21 +241,34 @@ export default function EditarJsonScreen() {
       return <ThemedText>Nenhuma tarefa encontrada.</ThemedText>;
     }
 
+    // Todos os cards usam a mesma cor verde
+
     return (
       <ThemedView style={styles.taskListContainer}>
-        <ThemedText type="title">Tarefas Disponíveis</ThemedText>
-        {taskNames.map((taskName) => (
-          <TouchableOpacity
-            key={taskName}
-            style={styles.taskItem}
-            onPress={() => selectTask(taskName)}
-          >
-            <ThemedText>{taskName}</ThemedText>
-            <ThemedText style={styles.taskDetails}>
-              Tempo total: {jsonData[taskName].totalTimeTracked}
-            </ThemedText>
-          </TouchableOpacity>
-        ))}
+        <ThemedText type="title" style={styles.sectionTitle}>Tarefas Disponíveis</ThemedText>
+        <View style={styles.cardContainer}>
+          {taskNames.map((taskName, index) => {
+            // Cada card usa o estilo padrão verde definido no styles
+            
+            return (
+              <TouchableOpacity
+                key={taskName}
+                style={styles.taskCard}
+                onPress={() => selectTask(taskName)}
+              >
+                <View style={styles.taskCardHeader}>
+                  <ThemedText style={styles.taskCardTitle}>{taskName}</ThemedText>
+                </View>
+                <View style={styles.taskCardBody}>
+                  <ThemedText style={styles.taskTimeLabel}>Tempo total:</ThemedText>
+                  <ThemedText style={styles.taskTimeValue}>
+                    {jsonData[taskName].totalTimeTracked}
+                  </ThemedText>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </ThemedView>
     );
   };
@@ -332,57 +367,246 @@ const createStyles = (colors: any) =>
     taskListContainer: {
       marginTop: 16,
     },
-    taskItem: {
-      padding: 12,
+    sectionTitle: {
+      marginBottom: 16,
+      textAlign: 'center',
+      color: '#00FF00',
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
+      letterSpacing: 2,
+      textShadowColor: '#00FF00',
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 4,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: '#00FF00',
+      paddingBottom: 8,
     },
-    taskDetails: {
-      fontSize: 12,
-      marginTop: 4,
+    cardContainer: {
+      flexDirection: 'column',
+    },
+    taskCard: {
+      width: '100%',
+      marginBottom: 16,
+      borderRadius: 0,
+      borderWidth: 2,
+      borderColor: '#00FF00',
+      backgroundColor: '#000000',
+      overflow: 'hidden',
+      elevation: 3,
+      shadowColor: '#00FF00',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      position: 'relative',
+    },
+    taskCardHeader: {
+      padding: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: '#00FF00',
+      backgroundColor: '#000000',
+      position: 'relative',
+    },
+    taskCardTitle: {
+      fontWeight: 'bold',
+      color: '#00FF00',
+      textAlign: 'center',
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    taskCardBody: {
+      padding: 12,
+      alignItems: 'center',
+      backgroundColor: '#0A0A0A',
+      borderLeftWidth: 2,
+      borderRightWidth: 2,
+      borderColor: '#00FF00',
+    },
+    taskTimeLabel: {
+      fontSize: 10,
+      marginBottom: 4,
+      opacity: 0.9,
+      color: '#00FF00',
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    taskTimeValue: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#00FF00',
+      fontFamily: 'monospace',
     },
     editorContainer: {
       marginTop: 16,
       padding: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 8,
+      borderWidth: 2,
+      borderColor: '#00FF00',
+      borderRadius: 0,
+      backgroundColor: '#141414',
+      shadowColor: '#00FF00',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 3,
+      position: 'relative',
     },
     fieldContainer: {
-      marginVertical: 8,
+      marginVertical: 12,
+      position: 'relative',
+    },
+    fieldLabel: {
+      fontWeight: 'bold',
+      marginBottom: 4,
+      color: '#00FF00',
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
+      fontSize: 10,
+      letterSpacing: 1,
     },
     input: {
       borderWidth: 1,
-      borderRadius: 4,
-      padding: 8,
-      marginTop: 4,
-      borderColor: colors.border,
-      color: colors.text,
-      backgroundColor: colors.backgroundInput,
+      borderRadius: 0,
+      padding: 10,
+      marginTop: 6,
+      borderColor: '#00FF00',
+      color: '#00FF00',
+      backgroundColor: '#0A0A0A',
+      fontSize: 14,
+      fontFamily: 'monospace',
     },
     buttonContainer: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginTop: 16,
+      flexDirection: "column",
+      alignItems: "center",
+      marginTop: 20,
+      marginBottom: 10,
+    },
+    editorTitle: {
+      textAlign: 'center',
+      marginBottom: 16,
+    },
+    totalTimeContainer: {
+      backgroundColor: '#000000',
+      padding: 12,
+      borderRadius: 0,
+      alignItems: 'center',
+      marginBottom: 20,
+      borderWidth: 2,
+      borderColor: '#00FF00',
+      position: 'relative',
+    },
+    totalTimeLabel: {
+      color: '#00FF00',
+      fontSize: 12,
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      opacity: 0.9,
+    },
+    totalTimeValue: {
+      color: '#00FF00',
+      fontSize: 28,
+      fontFamily: 'monospace',
+      marginTop: 4,
+      fontWeight: 'bold',
+    },
+    totalTimeInput: {
+      backgroundColor: '#000000',
+      color: '#00FF00',
+      fontSize: 28,
+      fontFamily: 'monospace',
+      fontWeight: 'bold',
+      borderColor: '#00FF00',
+      borderWidth: 1,
+      padding: 8,
+      textAlign: 'center',
+      width: '90%',
+      maxWidth: 200,
+      alignSelf: 'center',
+    },
+    fieldsContainer: {
+      marginTop: 10,
+    },
+    // fieldLabel já definido anteriormente
+    timelineIndicator: {
+      backgroundColor: '#0A0A0A',
+      padding: 8,
+      borderRadius: 0,
+      borderWidth: 1,
+      borderColor: '#00FF00',
+      marginTop: 4,
+    },
+    timelineText: {
+      color: '#00FF00',
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      fontSize: 12,
+    },
+    saveButton: {
+      backgroundColor: '#000000',
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minWidth: 200,
+      width: '80%',
+      marginBottom: 12,
+      borderWidth: 2,
+      borderColor: '#00FF00',
+    },
+    saveButtonText: {
+      color: '#00FF00',
+      fontFamily: 'monospace',
+      fontSize: 14,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    cancelButton: {
+      backgroundColor: '#000000',
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minWidth: 200,
+      width: '80%',
+      borderWidth: 2,
+      borderColor: '#FF3D00',
+    },
+    cancelButtonText: {
+      color: '#FF3D00',
+      fontFamily: 'monospace',
+      fontSize: 14,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
     },
     booleanSelector: {
       flexDirection: "row",
-      marginTop: 4,
+      marginTop: 8,
     },
     booleanOption: {
-      padding: 8,
-      marginRight: 8,
+      padding: 10,
+      marginRight: 10,
       borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 4,
+      borderColor: '#00FF00',
+      borderRadius: 0,
+      minWidth: 80,
+      alignItems: 'center',
+      backgroundColor: '#000000',
     },
     selectedOption: {
-      backgroundColor: "#03A9F4",
-      borderColor: "#03A9F4",
+      backgroundColor: "#0A0A0A",
+      borderColor: "#00FF00",
+      borderWidth: 2,
     },
     booleanText: {
-      fontWeight: "bold",
-      color: colors.text,
+      fontFamily: "monospace",
+      color: '#00FF00',
+      textTransform: 'uppercase',
+      fontSize: 12,
+      letterSpacing: 1,
     },
     rawEditorContainer: {
       marginTop: 16,
@@ -390,12 +614,13 @@ const createStyles = (colors: any) =>
     jsonInput: {
       borderWidth: 1,
       borderRadius: 4,
-      padding: 8,
+      padding: 12,
       marginVertical: 16,
       height: 300,
       fontFamily: "monospace",
-      borderColor: colors.border,
+      borderColor: '#4CAF50',
       color: colors.text,
-      backgroundColor: colors.background,
+      backgroundColor: colors.backgroundInput,
+      fontSize: 14,
     },
   });
