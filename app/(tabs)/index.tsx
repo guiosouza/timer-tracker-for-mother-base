@@ -10,7 +10,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import LoginScreen from "../../components/LoginScreen";
 import { clearCredentials } from "../utils/auth";
@@ -222,9 +222,12 @@ export default function HomeScreen() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const screenWidth = Dimensions.get('window').width;
-  const screenHeight = Dimensions.get('window').height;
-
+  const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height;
+  const [syncModalVisible, setSyncModalVisible] = useState(false);
+  const [syncStatus, setSyncStatus] = useState("");
+  const [syncCountdown, setSyncCountdown] = useState(10);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Recupera login
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -249,6 +252,14 @@ export default function HomeScreen() {
     checkIfRunning();
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -291,115 +302,213 @@ export default function HomeScreen() {
     Alert.alert("Salvo", "Sessão registrada localmente");
   }
 
+  const startSyncCountdown = () => {
+    setSyncCountdown(10);
+    const countdownInterval = setInterval(() => {
+      setSyncCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return countdownInterval;
+  };
+
+  const handleSync = async () => {
+    if (isRunning) return;
+
+    setSyncModalVisible(true);
+    setSyncStatus("Sincronizando...");
+    const countdownInterval = startSyncCountdown();
+
+    // Configura timeout de 10 segundos
+    syncTimeoutRef.current = setTimeout(() => {
+      clearInterval(countdownInterval);
+      setSyncStatus("Erro: Tempo excedido!\nTente novamente mais tarde.");
+    }, 10000);
+
+    try {
+      await syncTasksWithFirebase();
+      clearInterval(countdownInterval);
+      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+      setSyncStatus("Sincronização concluída!");
+
+      // Fecha o modal automaticamente após 2 segundos
+      setTimeout(() => {
+        setSyncModalVisible(false);
+      }, 2000);
+    } catch (error) {
+      clearInterval(countdownInterval);
+      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+
+      let errorMessage = "Erro desconhecido";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
+
+      setSyncStatus(`Erro: ${errorMessage}\nTente novamente mais tarde.`);
+    }
+  };
+
   const selectedColor =
     options.find((opt) => opt.label === selectedTask)?.color || "#000";
 
   return isLoggedIn ? (
-    <View style={{ flex: 1, backgroundColor: "#000" }}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
-      
-      {/* Safe area at top to avoid notification bar */}
-      <View style={styles.safeAreaTop} />
+    <>
+      <View style={{ flex: 1, backgroundColor: "#000" }}>
+        <StatusBar barStyle="light-content" backgroundColor="#000" />
 
-      {/* Main CODEC Screen */}
-      <LinearGradient
-        colors={['#1a2a3a', '#0a1520']}
-        style={styles.container}
-      >
-        <View style={styles.codecHeader}>
-          <View style={styles.codecBorder}>
-            <Text style={styles.codecHeaderText}>MOTHER BASE</Text>
-            <Text style={styles.codecSubText}>TIMER TRACKER</Text>
-          </View>
-          
-          {/* Logout Button below MOTHER BASE */}
-          <TouchableOpacity 
-            style={styles.logoutButton}
-            onPress={() => setShowLogoutConfirm(true)}
-          >
-            <Text style={styles.logoutButtonText}>LOGOUT</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Safe area at top to avoid notification bar */}
+        <View style={styles.safeAreaTop} />
 
-        <View style={styles.codecScreen}>
-          <View style={styles.codecContent}>
-            <View style={styles.taskSection}>
-              <Text style={styles.sectionTitle}>MISSION TYPE</Text>
-              <CustomSelect
-                selectedValue={selectedTask}
-                onChange={setSelectedTask}
-                isRunning={isRunning}
-              />
+        {/* Main CODEC Screen */}
+        <LinearGradient
+          colors={["#1a2a3a", "#0a1520"]}
+          style={styles.container}
+        >
+          <View style={styles.codecHeader}>
+            <View style={styles.codecBorder}>
+              <Text style={styles.codecHeaderText}>MOTHER BASE</Text>
+              <Text style={styles.codecSubText}>TIMER TRACKER</Text>
             </View>
 
-            <View style={styles.timerSection}>
-              <Text style={styles.sectionTitle}>ELAPSED TIME</Text>
-              <Text style={[styles.timerText, { color: selectedColor }]}>
-                {formatTime(seconds)}
-              </Text>
-              <View style={styles.buttonRow}>
+            {/* Logout Button below MOTHER BASE */}
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={() => setShowLogoutConfirm(true)}
+            >
+              <Text style={styles.logoutButtonText}>LOGOUT</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.codecScreen}>
+            <View style={styles.codecContent}>
+              <View style={styles.taskSection}>
+                <Text style={styles.sectionTitle}>MISSION TYPE</Text>
+                <CustomSelect
+                  selectedValue={selectedTask}
+                  onChange={setSelectedTask}
+                  isRunning={isRunning}
+                />
+              </View>
+
+              <View style={styles.timerSection}>
+                <Text style={styles.sectionTitle}>ELAPSED TIME</Text>
+                <Text style={[styles.timerText, { color: selectedColor }]}>
+                  {formatTime(seconds)}
+                </Text>
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.actionButton,
+                      isRunning ? styles.stopButton : styles.startButton,
+                    ]}
+                    onPress={isRunning ? stopTimer : startTimer}
+                  >
+                    <Text style={styles.actionButtonText}>
+                      {isRunning ? "STOP" : "START"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.syncSection}>
                 <TouchableOpacity
                   style={[
-                    styles.actionButton,
-                    isRunning ? styles.stopButton : styles.startButton,
+                    styles.syncButton,
+                    (isRunning || syncModalVisible) && styles.disabledButton,
                   ]}
-                  onPress={isRunning ? stopTimer : startTimer}
+                  onPress={handleSync}
+                  disabled={isRunning || syncModalVisible}
                 >
-                  <Text style={styles.actionButtonText}>
-                    {isRunning ? "STOP" : "START"}
+                  <Text
+                    style={[
+                      styles.syncButtonText,
+                      (isRunning || syncModalVisible) && styles.disabledText,
+                    ]}
+                  >
+                    SYNC DATA
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
+          </View>
 
-            <View style={styles.syncSection}>
-              <TouchableOpacity
-                style={[styles.syncButton, isRunning && styles.disabledButton]}
-                onPress={syncTasksWithFirebase}
-                disabled={isRunning}
-              >
-                <Text style={[styles.syncButtonText, isRunning && styles.disabledText]}>
-                  SYNC DATA
-                </Text>
-              </TouchableOpacity>
+          <View style={styles.codecFooter}>
+            <Text style={styles.codecFooterText}>
+              We're not junkyard hounds
+            </Text>
+            <Text style={styles.versionText}>v1.1.0</Text>
+          </View>
+        </LinearGradient>
+
+        {/* Logout Confirmation Modal */}
+        <Modal transparent visible={showLogoutConfirm} animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.logoutModal}>
+              <Text style={styles.logoutModalTitle}>CODEC TRANSMISSION</Text>
+              <Text style={styles.logoutModalText}>
+                Are you sure you want to disconnect from Mother Base?
+              </Text>
+              <View style={styles.logoutModalButtons}>
+                <TouchableOpacity
+                  style={styles.logoutModalButton}
+                  onPress={() => setShowLogoutConfirm(false)}
+                >
+                  <Text style={styles.logoutModalButtonText}>CANCEL</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.logoutModalButton, styles.logoutConfirmButton]}
+                  onPress={clearCredentials}
+                >
+                  <Text style={styles.logoutModalButtonText}>CONFIRM</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-
-        <View style={styles.codecFooter}>
-          <Text style={styles.codecFooterText}>We're not junkyard hounds</Text>
-          <Text style={styles.versionText}>v1.1.0</Text>
-        </View>
-      </LinearGradient>
-
-      {/* Logout Confirmation Modal */}
+        </Modal>
+      </View>
+      {/* Modal de Sincronização */}
       <Modal
         transparent
-        visible={showLogoutConfirm}
+        visible={syncModalVisible}
         animationType="fade"
+        onRequestClose={() =>
+          !syncStatus.includes("Sincronização concluída") &&
+          setSyncModalVisible(false)
+        }
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.logoutModal}>
-            <Text style={styles.logoutModalTitle}>CODEC TRANSMISSION</Text>
-            <Text style={styles.logoutModalText}>Are you sure you want to disconnect from Mother Base?</Text>
-            <View style={styles.logoutModalButtons}>
-              <TouchableOpacity 
-                style={styles.logoutModalButton}
-                onPress={() => setShowLogoutConfirm(false)}
-              >
-                <Text style={styles.logoutModalButtonText}>CANCEL</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.logoutModalButton, styles.logoutConfirmButton]}
-                onPress={clearCredentials}
-              >
-                <Text style={styles.logoutModalButtonText}>CONFIRM</Text>
-              </TouchableOpacity>
+          <View style={styles.syncModal}>
+            <Text style={styles.syncModalTitle}>SINCRONIZAÇÃO</Text>
+
+            <View style={styles.syncContent}>
+              <Text style={styles.syncStatusText}>{syncStatus}</Text>
+
+              {syncStatus === "Sincronizando..." && (
+                <View style={styles.countdownContainer}>
+                  <Text style={styles.countdownText}>{syncCountdown}s</Text>
+                </View>
+              )}
             </View>
+
+            {!syncStatus.includes("Sincronizando") && (
+              <TouchableOpacity
+                style={styles.syncModalButton}
+                onPress={() => setSyncModalVisible(false)}
+              >
+                <Text style={styles.syncModalButtonText}>OK</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Modal>
-    </View>
+    </>
   ) : (
     <LoginScreen onLoginSuccess={() => setIsLoggedIn(true)} />
   );
@@ -408,55 +517,55 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeAreaTop: {
     height: 30, // Altura para evitar a barra de notificações
-    width: '100%',
-    backgroundColor: '#000',
+    width: "100%",
+    backgroundColor: "#000",
   },
   container: {
     flex: 1,
     padding: 16,
   },
   logoutButton: {
-    backgroundColor: '#8B0000',
+    backgroundColor: "#8B0000",
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#FF0000',
+    borderColor: "#FF0000",
     marginTop: 10,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   logoutButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+    color: "#FFFFFF",
+    fontWeight: "bold",
     fontSize: 12,
   },
   codecHeader: {
     marginBottom: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   codecBorder: {
     borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderColor: "#4CAF50",
     padding: 8,
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   codecHeaderText: {
-    color: '#4CAF50',
+    color: "#4CAF50",
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     letterSpacing: 2,
   },
   codecSubText: {
-    color: '#4CAF50',
+    color: "#4CAF50",
     fontSize: 14,
     letterSpacing: 1,
   },
   codecScreen: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: "rgba(0,0,0,0.7)",
     borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderColor: "#4CAF50",
     borderRadius: 8,
     padding: 16,
     marginBottom: 16,
@@ -468,52 +577,52 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   timerSection: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 24,
   },
   syncSection: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   sectionTitle: {
-    color: '#4CAF50',
+    color: "#4CAF50",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
     letterSpacing: 1,
   },
   timerText: {
     fontSize: 48,
-    fontWeight: 'bold',
-    color: '#FFD700',
-    fontFamily: 'monospace',
+    fontWeight: "bold",
+    color: "#FFD700",
+    fontFamily: "monospace",
     marginBottom: 16,
-    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowColor: "rgba(0,0,0,0.75)",
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 4,
   },
   buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
   },
   actionButton: {
     paddingVertical: 12,
     paddingHorizontal: 36,
     borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
   },
   startButton: {
-    backgroundColor: '#006400',
-    borderColor: '#4CAF50',
+    backgroundColor: "#006400",
+    borderColor: "#4CAF50",
   },
   stopButton: {
-    backgroundColor: '#8B0000',
-    borderColor: '#FF0000',
+    backgroundColor: "#8B0000",
+    borderColor: "#FF0000",
   },
   actionButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
+    fontWeight: "bold",
     fontSize: 18,
     letterSpacing: 1,
   },
@@ -521,13 +630,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 24,
     borderRadius: 4,
-    backgroundColor: '#1a3a5a',
+    backgroundColor: "#1a3a5a",
     borderWidth: 1,
-    borderColor: '#4169E1',
+    borderColor: "#4169E1",
   },
   syncButtonText: {
-    color: '#ADD8E6',
-    fontWeight: 'bold',
+    color: "#ADD8E6",
+    fontWeight: "bold",
     fontSize: 14,
     letterSpacing: 1,
   },
@@ -535,20 +644,20 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   disabledText: {
-    color: '#999',
+    color: "#999",
   },
   codecFooter: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 8,
   },
   codecFooterText: {
-    color: '#4CAF50',
+    color: "#4CAF50",
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     letterSpacing: 2,
   },
   versionText: {
-    color: '#4CAF50',
+    color: "#4CAF50",
     fontSize: 10,
     marginTop: 4,
     opacity: 0.7,
@@ -556,102 +665,155 @@ const styles = StyleSheet.create({
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   logoutModal: {
-    width: '80%',
-    backgroundColor: '#0a1520',
+    width: "80%",
+    backgroundColor: "#0a1520",
     borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderColor: "#4CAF50",
     borderRadius: 8,
     padding: 16,
   },
   logoutModalTitle: {
-    color: '#4CAF50',
+    color: "#4CAF50",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 12,
-    textAlign: 'center',
+    textAlign: "center",
     letterSpacing: 1,
   },
   logoutModalText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   logoutModalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   logoutModalButton: {
     flex: 1,
     paddingVertical: 8,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#4CAF50',
+    borderColor: "#4CAF50",
     borderRadius: 4,
     marginHorizontal: 4,
-    backgroundColor: '#1a3a5a',
+    backgroundColor: "#1a3a5a",
   },
   logoutConfirmButton: {
-    backgroundColor: '#8B0000',
-    borderColor: '#FF0000',
+    backgroundColor: "#8B0000",
+    borderColor: "#FF0000",
   },
   logoutModalButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+    color: "#FFFFFF",
+    fontWeight: "bold",
   },
   // Select styles
   selectButton: {
     padding: 12,
     borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderColor: "#4CAF50",
     borderRadius: 4,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  selectText: { 
-    fontSize: 16, 
-    color: '#4CAF50',
-    fontWeight: 'bold',
+  selectText: {
+    fontSize: 16,
+    color: "#4CAF50",
+    fontWeight: "bold",
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContainer: {
-    backgroundColor: '#0a1520',
+    backgroundColor: "#0a1520",
     borderRadius: 8,
-    width: '80%',
+    width: "80%",
     padding: 16,
     borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderColor: "#4CAF50",
   },
-  option: { 
-    padding: 12, 
-    borderBottomWidth: 1, 
-    borderBottomColor: '#4CAF50',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+  option: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#4CAF50",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  optionText: { 
-    fontSize: 16, 
-    fontWeight: '500',
+  optionText: {
+    fontSize: 16,
+    fontWeight: "500",
   },
   cancelButton: {
     marginTop: 10,
     padding: 12,
-    backgroundColor: '#8B0000',
+    backgroundColor: "#8B0000",
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#FF0000',
+    borderColor: "#FF0000",
   },
-  cancelText: { 
-    textAlign: 'center', 
-    fontWeight: 'bold', 
-    color: '#FFFFFF' 
+  cancelText: {
+    textAlign: "center",
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  syncModal: {
+    width: "80%",
+    backgroundColor: "#0a1520",
+    borderWidth: 2,
+    borderColor: "#4CAF50",
+    borderRadius: 8,
+    padding: 16,
+    alignItems: "center",
+  },
+  syncModalTitle: {
+    color: "#4CAF50",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 16,
+    letterSpacing: 1,
+  },
+  syncContent: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  syncStatusText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  countdownContainer: {
+    backgroundColor: "rgba(255, 215, 0, 0.2)",
+    borderRadius: 50,
+    width: 60,
+    height: 60,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#FFD700",
+  },
+  countdownText: {
+    color: "#FFD700",
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  syncModalButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    backgroundColor: "#1a3a5a",
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+  },
+  syncModalButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
   },
 });
