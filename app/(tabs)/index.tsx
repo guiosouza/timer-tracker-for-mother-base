@@ -138,7 +138,8 @@ async function syncTasksWithFirebase() {
   }
 
   await saveLocalData(localData);
-  Alert.alert("Sucesso", "Sincronização concluída!");
+  // ❌ Remover o Alert.alert daqui
+  // Alert.alert("Sucesso", "Sincronização concluída!");
 }
 
 // --- Opções de Task ---
@@ -337,9 +338,9 @@ export default function HomeScreen() {
       setSyncStatus("Sincronização concluída!");
 
       // Fecha o modal automaticamente após 2 segundos
-      setTimeout(() => {
-        setSyncModalVisible(false);
-      }, 2000);
+      // setTimeout(() => {
+      //   setSyncModalVisible(false);
+      // }, 2000);
     } catch (error) {
       clearInterval(countdownInterval);
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
