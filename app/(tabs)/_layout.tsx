@@ -37,20 +37,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="timeline"
+        name="backup"
         options={{
-          title: "Timeline",
+          title: "Backup Geral",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="timelapse" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="relatorios"
-        options={{
-          title: "Relatórios",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="chart.bar.fill" color={color} />
+            <IconSymbol size={28} name="arrow.clockwise.icloud.fill" color={color} />
           ),
         }}
       />

@@ -12,7 +12,8 @@ import {
   Button,
   StyleSheet,
   TouchableOpacity,
-  View
+  View,
+  Clipboard
 } from "react-native";
 
 // Chave de armazenamento do JSON local
@@ -219,6 +220,11 @@ export default function EditarJsonScreen() {
     );
   };
 
+  const copyJsonToClipboard = () => {
+    Clipboard.setString(jsonString);
+    Alert.alert("Sucesso", "JSON copiado para a área de transferência!");
+  };
+
   const renderRawEditor = () => {
     return (
       <ThemedView style={styles.rawEditorContainer}>
@@ -229,7 +235,14 @@ export default function EditarJsonScreen() {
           value={jsonString}
           onChangeText={setJsonString}
         />
-        <Button title="Salvar JSON" onPress={saveData} />
+        <View style={styles.jsonButtonsContainer}>
+          <TouchableOpacity style={styles.copyButton} onPress={copyJsonToClipboard}>
+            <ThemedText style={styles.copyButtonText}>COPIAR JSON</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.saveJsonButton} onPress={saveData}>
+            <ThemedText style={styles.saveButtonText}>SALVAR JSON</ThemedText>
+          </TouchableOpacity>
+        </View>
       </ThemedView>
     );
   };
@@ -622,5 +635,37 @@ const createStyles = (colors: any) =>
       color: colors.text,
       backgroundColor: colors.backgroundInput,
       fontSize: 14,
+    },
+    jsonButtonsContainer: {
+      flexDirection: "column",
+      marginTop: 10,
+    },
+    copyButton: {
+      backgroundColor: "#000000",
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 0,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 10,
+      borderWidth: 2,
+      borderColor: "#03A9F4",
+    },
+    saveJsonButton: {
+      backgroundColor: "#000000",
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 0,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 2,
+      borderColor: "#00FF00",
+    },
+    copyButtonText: {
+      color: "#03A9F4",
+      fontFamily: "monospace",
+      fontSize: 14,
+      textTransform: "uppercase",
+      letterSpacing: 1,
     },
   });
