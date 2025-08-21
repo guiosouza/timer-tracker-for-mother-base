@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "timer-tracker-for-mother-base",
+    "name": "Timer Tracker for Mother Base",
     "slug": "timer-tracker-for-mother-base",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "timertrackerformotherbase",
@@ -43,7 +43,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "b683a4dc-e317-4905-ad9b-f3eb7000c020"
+        "projectId": "cbf3279d-e814-493b-98c5-3bc15a86b185"
       }
     }
   }
