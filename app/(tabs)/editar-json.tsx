@@ -6,14 +6,13 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Clipboard from "expo-clipboard";
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Button,
   StyleSheet,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 // Chave de armazenamento do JSON local
@@ -30,7 +29,7 @@ export default function EditarJsonScreen() {
   const colors = Colors[colorScheme];
 
   // Usando useMemo para recriar os estilos apenas quando o tema mudar
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors), [colorScheme]);
 
   // Carregar dados do AsyncStorage
   useEffect(() => {
@@ -57,7 +56,7 @@ export default function EditarJsonScreen() {
       if (editMode === "raw") {
         try {
           dataToSave = JSON.parse(jsonString);
-        } catch {
+        } catch (error) {
           Alert.alert("Erro", "JSON inválido. Verifique a formatação.");
           return;
         }
@@ -151,10 +150,8 @@ export default function EditarJsonScreen() {
 
     return (
       <ThemedView style={styles.editorContainer}>
-        <ThemedText type="title" style={styles.editorTitle}>
-          Editando: {selectedTask}
-        </ThemedText>
-
+        <ThemedText type="title" style={styles.editorTitle}>Editando: {selectedTask}</ThemedText>
+        
         {/* Destacando o tempo total - agora editável */}
         {editedTask.totalTimeTracked && (
           <View style={styles.totalTimeContainer}>
@@ -162,7 +159,7 @@ export default function EditarJsonScreen() {
             <ThemedTextInput
               style={styles.totalTimeInput}
               value={String(editedTask.totalTimeTracked)}
-              onChangeText={(text) => updateTaskField("totalTimeTracked", text)}
+              onChangeText={(text) => updateTaskField('totalTimeTracked', text)}
             />
           </View>
         )}
@@ -171,7 +168,7 @@ export default function EditarJsonScreen() {
           {Object.entries(editedTask).map(([key, value]) => {
             // Não mostrar totalTimeTracked novamente (já está destacado acima)
             if (key === "totalTimeTracked") return null;
-
+            
             // Não mostrar timeline para edição direta
             if (key === "timeline") {
               return (
@@ -206,11 +203,9 @@ export default function EditarJsonScreen() {
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.saveButton} onPress={saveData}>
-            <ThemedText style={styles.saveButtonText}>
-              SALVAR ALTERAÇÕES
-            </ThemedText>
+            <ThemedText style={styles.saveButtonText}>SALVAR ALTERAÇÕES</ThemedText>
           </TouchableOpacity>
-          <TouchableOpacity
+          <TouchableOpacity 
             style={styles.cancelButton}
             onPress={() => {
               setSelectedTask(null);
@@ -224,11 +219,6 @@ export default function EditarJsonScreen() {
     );
   };
 
-  const copyJsonToClipboard = async () => {
-    await Clipboard.setStringAsync(jsonString);
-    Alert.alert("Sucesso", "JSON copiado para a área de transferência!");
-  };
-
   const renderRawEditor = () => {
     return (
       <ThemedView style={styles.rawEditorContainer}>
@@ -239,17 +229,7 @@ export default function EditarJsonScreen() {
           value={jsonString}
           onChangeText={setJsonString}
         />
-        <View style={styles.jsonButtonsContainer}>
-          <TouchableOpacity
-            style={styles.copyButton}
-            onPress={copyJsonToClipboard}
-          >
-            <ThemedText style={styles.copyButtonText}>COPIAR JSON</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.saveJsonButton} onPress={saveData}>
-            <ThemedText style={styles.saveButtonText}>SALVAR JSON</ThemedText>
-          </TouchableOpacity>
-        </View>
+        <Button title="Salvar JSON" onPress={saveData} />
       </ThemedView>
     );
   };
@@ -265,13 +245,11 @@ export default function EditarJsonScreen() {
 
     return (
       <ThemedView style={styles.taskListContainer}>
-        <ThemedText type="title" style={styles.sectionTitle}>
-          Tarefas Disponíveis
-        </ThemedText>
+        <ThemedText type="title" style={styles.sectionTitle}>Tarefas Disponíveis</ThemedText>
         <View style={styles.cardContainer}>
           {taskNames.map((taskName, index) => {
             // Cada card usa o estilo padrão verde definido no styles
-
+            
             return (
               <TouchableOpacity
                 key={taskName}
@@ -279,14 +257,10 @@ export default function EditarJsonScreen() {
                 onPress={() => selectTask(taskName)}
               >
                 <View style={styles.taskCardHeader}>
-                  <ThemedText style={styles.taskCardTitle}>
-                    {taskName}
-                  </ThemedText>
+                  <ThemedText style={styles.taskCardTitle}>{taskName}</ThemedText>
                 </View>
                 <View style={styles.taskCardBody}>
-                  <ThemedText style={styles.taskTimeLabel}>
-                    Tempo total:
-                  </ThemedText>
+                  <ThemedText style={styles.taskTimeLabel}>Tempo total:</ThemedText>
                   <ThemedText style={styles.taskTimeValue}>
                     {jsonData[taskName].totalTimeTracked}
                   </ThemedText>
@@ -395,98 +369,98 @@ const createStyles = (colors: any) =>
     },
     sectionTitle: {
       marginBottom: 16,
-      textAlign: "center",
-      color: "#00FF00",
-      fontFamily: "monospace",
-      textTransform: "uppercase",
+      textAlign: 'center',
+      color: '#00FF00',
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
       letterSpacing: 2,
-      textShadowColor: "#00FF00",
+      textShadowColor: '#00FF00',
       textShadowOffset: { width: 0, height: 0 },
       textShadowRadius: 4,
       borderBottomWidth: 1,
-      borderBottomColor: "#00FF00",
+      borderBottomColor: '#00FF00',
       paddingBottom: 8,
     },
     cardContainer: {
-      flexDirection: "column",
+      flexDirection: 'column',
     },
     taskCard: {
-      width: "100%",
+      width: '100%',
       marginBottom: 16,
       borderRadius: 0,
       borderWidth: 2,
-      borderColor: "#00FF00",
-      backgroundColor: "#000000",
-      overflow: "hidden",
+      borderColor: '#00FF00',
+      backgroundColor: '#000000',
+      overflow: 'hidden',
       elevation: 3,
-      shadowColor: "#00FF00",
+      shadowColor: '#00FF00',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.3,
       shadowRadius: 4,
-      position: "relative",
+      position: 'relative',
     },
     taskCardHeader: {
       padding: 10,
       borderBottomWidth: 1,
-      borderBottomColor: "#00FF00",
-      backgroundColor: "#000000",
-      position: "relative",
+      borderBottomColor: '#00FF00',
+      backgroundColor: '#000000',
+      position: 'relative',
     },
     taskCardTitle: {
-      fontWeight: "bold",
-      color: "#00FF00",
-      textAlign: "center",
-      fontFamily: "monospace",
-      textTransform: "uppercase",
+      fontWeight: 'bold',
+      color: '#00FF00',
+      textAlign: 'center',
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
       letterSpacing: 1,
     },
     taskCardBody: {
       padding: 12,
-      alignItems: "center",
-      backgroundColor: "#0A0A0A",
+      alignItems: 'center',
+      backgroundColor: '#0A0A0A',
       borderLeftWidth: 2,
       borderRightWidth: 2,
-      borderColor: "#00FF00",
+      borderColor: '#00FF00',
     },
     taskTimeLabel: {
       fontSize: 10,
       marginBottom: 4,
       opacity: 0.9,
-      color: "#00FF00",
-      fontFamily: "monospace",
-      textTransform: "uppercase",
+      color: '#00FF00',
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
       letterSpacing: 1,
     },
     taskTimeValue: {
       fontSize: 24,
-      fontWeight: "bold",
-      color: "#00FF00",
-      fontFamily: "monospace",
+      fontWeight: 'bold',
+      color: '#00FF00',
+      fontFamily: 'monospace',
     },
     editorContainer: {
       marginTop: 16,
       padding: 16,
       borderWidth: 2,
-      borderColor: "#00FF00",
+      borderColor: '#00FF00',
       borderRadius: 0,
-      backgroundColor: "#141414",
-      shadowColor: "#00FF00",
+      backgroundColor: '#141414',
+      shadowColor: '#00FF00',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.3,
       shadowRadius: 4,
       elevation: 3,
-      position: "relative",
+      position: 'relative',
     },
     fieldContainer: {
       marginVertical: 12,
-      position: "relative",
+      position: 'relative',
     },
     fieldLabel: {
-      fontWeight: "bold",
+      fontWeight: 'bold',
       marginBottom: 4,
-      color: "#00FF00",
-      fontFamily: "monospace",
-      textTransform: "uppercase",
+      color: '#00FF00',
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
       fontSize: 10,
       letterSpacing: 1,
     },
@@ -495,11 +469,11 @@ const createStyles = (colors: any) =>
       borderRadius: 0,
       padding: 10,
       marginTop: 6,
-      borderColor: "#00FF00",
-      color: "#00FF00",
-      backgroundColor: "#0A0A0A",
+      borderColor: '#00FF00',
+      color: '#00FF00',
+      backgroundColor: '#0A0A0A',
       fontSize: 14,
-      fontFamily: "monospace",
+      fontFamily: 'monospace',
     },
     buttonContainer: {
       flexDirection: "column",
@@ -508,104 +482,104 @@ const createStyles = (colors: any) =>
       marginBottom: 10,
     },
     editorTitle: {
-      textAlign: "center",
+      textAlign: 'center',
       marginBottom: 16,
     },
     totalTimeContainer: {
-      backgroundColor: "#000000",
+      backgroundColor: '#000000',
       padding: 12,
       borderRadius: 0,
-      alignItems: "center",
+      alignItems: 'center',
       marginBottom: 20,
       borderWidth: 2,
-      borderColor: "#00FF00",
-      position: "relative",
+      borderColor: '#00FF00',
+      position: 'relative',
     },
     totalTimeLabel: {
-      color: "#00FF00",
+      color: '#00FF00',
       fontSize: 12,
-      fontFamily: "monospace",
-      textTransform: "uppercase",
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
       letterSpacing: 1,
       opacity: 0.9,
     },
     totalTimeValue: {
-      color: "#00FF00",
+      color: '#00FF00',
       fontSize: 28,
-      fontFamily: "monospace",
+      fontFamily: 'monospace',
       marginTop: 4,
-      fontWeight: "bold",
+      fontWeight: 'bold',
     },
     totalTimeInput: {
-      backgroundColor: "#000000",
-      color: "#00FF00",
+      backgroundColor: '#000000',
+      color: '#00FF00',
       fontSize: 28,
-      fontFamily: "monospace",
-      fontWeight: "bold",
-      borderColor: "#00FF00",
+      fontFamily: 'monospace',
+      fontWeight: 'bold',
+      borderColor: '#00FF00',
       borderWidth: 1,
       padding: 8,
-      textAlign: "center",
-      width: "90%",
+      textAlign: 'center',
+      width: '90%',
       maxWidth: 200,
-      alignSelf: "center",
+      alignSelf: 'center',
     },
     fieldsContainer: {
       marginTop: 10,
     },
     // fieldLabel já definido anteriormente
     timelineIndicator: {
-      backgroundColor: "#0A0A0A",
+      backgroundColor: '#0A0A0A',
       padding: 8,
       borderRadius: 0,
       borderWidth: 1,
-      borderColor: "#00FF00",
+      borderColor: '#00FF00',
       marginTop: 4,
     },
     timelineText: {
-      color: "#00FF00",
-      fontFamily: "monospace",
-      textTransform: "uppercase",
+      color: '#00FF00',
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
       letterSpacing: 1,
       fontSize: 12,
     },
     saveButton: {
-      backgroundColor: "#000000",
+      backgroundColor: '#000000',
       paddingVertical: 12,
       paddingHorizontal: 20,
       borderRadius: 0,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
       minWidth: 200,
-      width: "80%",
+      width: '80%',
       marginBottom: 12,
       borderWidth: 2,
-      borderColor: "#00FF00",
+      borderColor: '#00FF00',
     },
     saveButtonText: {
-      color: "#00FF00",
-      fontFamily: "monospace",
+      color: '#00FF00',
+      fontFamily: 'monospace',
       fontSize: 14,
-      textTransform: "uppercase",
+      textTransform: 'uppercase',
       letterSpacing: 1,
     },
     cancelButton: {
-      backgroundColor: "#000000",
+      backgroundColor: '#000000',
       paddingVertical: 12,
       paddingHorizontal: 20,
       borderRadius: 0,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
       minWidth: 200,
-      width: "80%",
+      width: '80%',
       borderWidth: 2,
-      borderColor: "#FF3D00",
+      borderColor: '#FF3D00',
     },
     cancelButtonText: {
-      color: "#FF3D00",
-      fontFamily: "monospace",
+      color: '#FF3D00',
+      fontFamily: 'monospace',
       fontSize: 14,
-      textTransform: "uppercase",
+      textTransform: 'uppercase',
       letterSpacing: 1,
     },
     booleanSelector: {
@@ -616,11 +590,11 @@ const createStyles = (colors: any) =>
       padding: 10,
       marginRight: 10,
       borderWidth: 1,
-      borderColor: "#00FF00",
+      borderColor: '#00FF00',
       borderRadius: 0,
       minWidth: 80,
-      alignItems: "center",
-      backgroundColor: "#000000",
+      alignItems: 'center',
+      backgroundColor: '#000000',
     },
     selectedOption: {
       backgroundColor: "#0A0A0A",
@@ -629,8 +603,8 @@ const createStyles = (colors: any) =>
     },
     booleanText: {
       fontFamily: "monospace",
-      color: "#00FF00",
-      textTransform: "uppercase",
+      color: '#00FF00',
+      textTransform: 'uppercase',
       fontSize: 12,
       letterSpacing: 1,
     },
@@ -644,41 +618,9 @@ const createStyles = (colors: any) =>
       marginVertical: 16,
       height: 300,
       fontFamily: "monospace",
-      borderColor: "#4CAF50",
+      borderColor: '#4CAF50',
       color: colors.text,
       backgroundColor: colors.backgroundInput,
       fontSize: 14,
-    },
-    jsonButtonsContainer: {
-      flexDirection: "column",
-      marginTop: 10,
-    },
-    copyButton: {
-      backgroundColor: "#000000",
-      paddingVertical: 12,
-      paddingHorizontal: 20,
-      borderRadius: 0,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: 10,
-      borderWidth: 2,
-      borderColor: "#03A9F4",
-    },
-    saveJsonButton: {
-      backgroundColor: "#000000",
-      paddingVertical: 12,
-      paddingHorizontal: 20,
-      borderRadius: 0,
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 2,
-      borderColor: "#00FF00",
-    },
-    copyButtonText: {
-      color: "#03A9F4",
-      fontFamily: "monospace",
-      fontSize: 14,
-      textTransform: "uppercase",
-      letterSpacing: 1,
     },
   });

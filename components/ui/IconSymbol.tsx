@@ -21,8 +21,7 @@ const MAPPING = {
   'chart.bar.fill': 'bar-chart',
   'timelapse': 'timeline',
   'stopwatch.fill': 'timer',
-  'pencil.and.outline': 'edit',
-  'arrow.clockwise.icloud.fill': 'backup'
+  'pencil.and.outline': 'edit'
 } as IconMapping;
 
 /**
