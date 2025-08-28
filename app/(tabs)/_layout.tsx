@@ -37,15 +37,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="timeline"
-        options={{
-          title: "Timeline",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="timelapse" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="relatorios"
         options={{
           title: "Relatórios",
