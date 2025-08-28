@@ -104,6 +104,58 @@ async function syncTasksWithFirebase() {
   const uid = auth.currentUser.uid;
   const localData = await getLocalData();
 
+  // Primeiro, buscar todas as tarefas do Firebase
+  const userDataRef = ref(database, `gamificationUserData/${uid}`);
+  const userDataSnap = await get(userDataRef);
+  
+  if (userDataSnap.exists()) {
+    const remoteData = userDataSnap.val();
+    
+    // Verificar todas as tarefas remotas primeiro
+    for (const taskName in remoteData) {
+      // Ignorar campos que não são tarefas
+      if (['userLevel', 'currentExp', 'dailyTaskUsage', 'dailyTimeSpent', 'fallDates', 'vidasData'].includes(taskName)) {
+        continue;
+      }
+      
+      const remote = remoteData[taskName];
+      
+      // Se a tarefa remota tem timeWasUsed como true, precisamos sincronizar
+      if (remote && remote.timeWasUsed === true) {
+        // Se a tarefa existe localmente
+        if (localData[taskName]) {
+          const remoteLast = Date.parse(remote.lastTimeSynced || '0');
+          const localLast = Date.parse(localData[taskName].lastTimeSynced || '0');
+          
+          if (localLast > remoteLast) {
+            // Local é mais recente, atualizar o Firebase
+            await set(ref(database, `gamificationUserData/${uid}/${taskName}`), {
+              ...localData[taskName],
+              timeWasUsed: false,
+            });
+          } else {
+            // Firebase é mais recente, atualizar o local
+            localData[taskName] = {
+              ...localData[taskName],
+              timeline: [],
+              totalTimeTracked: "000:00",
+              timeWasUsed: true,
+            };
+          }
+        } else {
+          // A tarefa não existe localmente, criar com os dados do Firebase
+          localData[taskName] = {
+            ...remote,
+            timeline: [],
+            totalTimeTracked: "000:00",
+            timeWasUsed: true,
+          };
+        }
+      }
+    }
+  }
+  
+  // Agora sincronizar as tarefas locais com o Firebase
   for (const taskName in localData) {
     const taskRef = ref(database, `gamificationUserData/${uid}/${taskName}`);
     const snap = await get(taskRef);
@@ -112,23 +164,11 @@ async function syncTasksWithFirebase() {
       ? snap.val()
       : { lastTimeSynced: "", timeWasUsed: false };
 
-    const remoteLast = Date.parse(remote.lastTimeSynced);
-    const localLast = Date.parse(localData[taskName].lastTimeSynced);
+    const remoteLast = Date.parse(remote.lastTimeSynced || '0');
+    const localLast = Date.parse(localData[taskName].lastTimeSynced || '0');
 
+    // Se já tratamos essa tarefa na etapa anterior, pular
     if (remote.timeWasUsed) {
-      if (localLast > remoteLast) {
-        await set(taskRef, {
-          ...localData[taskName],
-          timeWasUsed: false,
-        });
-      } else {
-        localData[taskName] = {
-          ...localData[taskName],
-          timeline: [],
-          totalTimeTracked: "000:00",
-          timeWasUsed: true,
-        };
-      }
       continue;
     }
 
@@ -444,7 +484,7 @@ export default function HomeScreen() {
             <Text style={styles.codecFooterText}>
               We're not junkyard hounds
             </Text>
-            <Text style={styles.versionText}>v1.1.0</Text>
+            <Text style={styles.versionText}>v1.2.0</Text>
           </View>
         </LinearGradient>
 

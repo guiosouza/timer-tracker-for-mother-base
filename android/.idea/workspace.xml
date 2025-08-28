@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="26adf385-8fdc-40e0-89c0-95245a5c7919" name="Changes" comment="" />
+    <list default="true" id="e6c02994-6ac1-4511-8e8b-ed53ad418a28" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../package.json" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -17,9 +20,10 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
   <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
   "associatedIndex": 1
 }]]></component>
-  <component name="ProjectId" id="31CNauvBmCPpcd93B27KeYK7zVp" />
+  <component name="ProjectId" id="31WN0HFiDIFDuYEoNndeHRRNXDz" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -32,19 +36,18 @@
     "android.gradle.sync.needed": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "3884e9af",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Hgfpay/Documents/projetos/timer-tracker-for-mother-base/android"
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true"
   }
 }]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="26adf385-8fdc-40e0-89c0-95245a5c7919" name="Changes" comment="" />
-      <created>1755024162294</created>
+      <changelist id="e6c02994-6ac1-4511-8e8b-ed53ad418a28" name="Changes" comment="" />
+      <created>1755635647818</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1755024162294</updated>
+      <updated>1755635647818</updated>
     </task>
     <servers />
   </component>
