@@ -19,38 +19,38 @@ interface LevelImage {
 // Array com as patentes e suas respectivas imagens
 const urlImages: LevelImage[] = [ 
   { level: 1, path: "novice.png", name: "Novice" }, 
-  { level: 203000, path: "novice-2.png", name: "Novice 2" }, 
-  { level: 817000, path: "diamond_dog.png", name: "Diamond Dog" }, 
-  { level: 1625000, path: "gnome_soldier.png", name: "Gnome Soldier" }, 
+  { level: 900000, path: "novice-2.png", name: "Novice 2" }, 
+  { level: 8223000, path: "diamond_dog.png", name: "Diamond Dog" }, 
+  { level: 20000000, path: "gnome_soldier.png", name: "Gnome Soldier" }, 
   { 
-    level: 9947000, 
+    level: 69947000, 
     path: "outer_heaven_soldier.png", 
     name: "Outer Heaven Soldier", 
   }, 
   { 
-    level: 28992000, 
+    level: 200992000, 
     path: "militaires_sans_frontieres.png", 
     name: "Militaires Sans Frontières", 
   }, 
-  { level: 69984000, path: "fox.png", name: "Fox" }, 
+  { level: 512984000, path: "fox.png", name: "Fox" }, 
   { 
-    level: 101600000, 
+    level: 1290600000, 
     path: "desperado_enforcement_llc.png", 
     name: "Desperado Enforcement LLC", 
   }, 
   { 
-    level: 181999900, 
+    level: 2444999900, 
     path: "les_enfants_terribles.png", 
     name: "Les Enfants Terribles", 
   }, 
   { 
-    level: 280000000, 
+    level: 3000000000, 
     path: "fox_hound_special_forces.png", 
     name: "FOX HOUND Special Forces", 
   }, 
-  { level: 888000000, path: "big_boss.png", name: "Snake" }, 
-  { level: 1999999998, path: "the_boss.png", name: "The Boss" }, 
-  { level: 2912000000, path: "venom_snake.png", name: "Venom Snake" }, 
+  { level: 4200000000, path: "big_boss.png", name: "Snake" }, 
+  { level: 6999999998, path: "the_boss.png", name: "The Boss" }, 
+  { level: 8200000000, path: "venom_snake.png", name: "Venom Snake" }, 
 ];
 
 // Mapeamento de nomes de arquivos para módulos de imagem
