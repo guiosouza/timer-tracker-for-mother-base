@@ -37,15 +37,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="relatorios"
-        options={{
-          title: "Relatórios",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="chart.bar.fill" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="editar-json"
         options={{
           title: "Editar JSON",

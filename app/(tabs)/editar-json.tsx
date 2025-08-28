@@ -313,6 +313,9 @@ export default function EditarJsonScreen() {
     >
       <ThemedView style={styles.container}>
         <ThemedText type="title">Editor de JSON Local</ThemedText>
+        <ThemedText style={styles.description}>
+          Aqui você pode conferir os dados locais antes de enviar para o remoto
+        </ThemedText>
 
         <View style={styles.modeSelector}>
           <TouchableOpacity
@@ -680,5 +683,24 @@ const createStyles = (colors: any) =>
       fontSize: 14,
       textTransform: "uppercase",
       letterSpacing: 1,
+    },
+    description: {
+      color: "#00FF00",
+      fontSize: 14,
+      fontFamily: "monospace",
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      textAlign: "center",
+      marginVertical: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      backgroundColor: "#0A0A0A",
+      borderWidth: 1,
+      borderColor: "#00FF00",
+      borderRadius: 0,
+      opacity: 0.9,
+      textShadowColor: "#00FF00",
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 2,
     },
   });
